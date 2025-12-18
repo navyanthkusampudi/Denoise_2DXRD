@@ -9,6 +9,7 @@ __pycache__/
 
 # Jupyter
 .ipynb_checkpoints/
+.cache/
 
 # OS / editor
 .DS_Store

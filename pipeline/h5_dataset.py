@@ -15,7 +15,7 @@ except Exception as e:  # pragma: no cover
 
 Size2D = Union[int, Tuple[int, int]]
 
-DEFAULT_H5_KEY = "/data"
+DEFAULT_H5_KEY = "/img"
 # Historical default used in earlier experiments. We no longer hard-enforce this
 # so the same pipeline can train on cropped detector frames (e.g. 400x490).
 EXPECTED_HW = (512, 512)
@@ -136,7 +136,7 @@ def _get_stack_dataset(f: "h5py.File") -> "h5py.Dataset":
     Preferred key is '/data' (as shown in HDFView). For backward compatibility we
     also accept '/X' if present.
     """
-    candidates = [DEFAULT_H5_KEY, DEFAULT_H5_KEY.lstrip("/"), "/X", "X"]
+    candidates = [DEFAULT_H5_KEY, DEFAULT_H5_KEY.lstrip("/"), "/X", "X", "data"]
     last_err: Exception | None = None
     for k in candidates:
         try:

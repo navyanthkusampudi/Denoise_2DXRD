@@ -34,7 +34,7 @@ from models.singleconv import SingleConvolution
 
 
 def _get_h5_dataset(f: "h5py.File") -> "h5py.Dataset":
-    for k in ["data", "/data", "X", "/X"]:
+    for k in ["img", "/img","data", "/data", "X", "/X"]:
         if k in f:
             return f[k]
     raise KeyError(f"Could not find dataset key in H5. Keys: {list(f.keys())}")
