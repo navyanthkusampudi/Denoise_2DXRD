@@ -9,13 +9,17 @@ the same principle works on matrices of single-cell gene expression.
 
 *The result of training a U-Net to denoise a stack of noisy Chinese characters. Note that the only input is the noisy data; no ground truth is necessary.*
 
-## Images
+## Minimal denoising pipeline (what this repo keeps)
 
-The notebook [Intro to Calibration](notebooks/Intro%20to%20Calibration.ipynb) shows how to calibrate any traditional image denoising model, such as median filtering, wavelet thresholding, or non-local means. We use the excellent [scikit-image](www.scikit-image.org) implementations of these methods, and have submitted a PR to incorporate self-supervised calibration directly into the package. (Comments welcome on the [PR](https://github.com/scikit-image/scikit-image/pull/3824)!)
+This repo has been cleaned down to a minimal, practical pipeline for denoising a detector-image stack stored in **HDF5**:
 
-The notebook [Intro to Neural Nets](notebooks/Intro%20to%20Neural%20Nets.ipynb) shows how to train a denoising neural net using a self-supervised loss, on the simple example of MNIST digits. The notebook runs in less than a minute, on CPU, on a MacBook Pro. We implement this in [pytorch](www.pytorch.org).
+- `train_noise2self.py`: train a model from noisy data only (self-supervised)
+- `scripts/denoise_h5_stack.py`: apply a trained checkpoint to an HDF5 stack
+- `mask.py`, `pipeline/`, `models/`: core implementation
 
-The notebook [Single Shot Denoising](notebooks/Single-Shot%20Denoising.ipynb) demonstrates that there is enough information in a single 512x512 noisy image for a deep neural net to learn to denoise it, with performance better than classical blind image denoisers.
+Dependencies are in `environment.yml`.
+
+## How Noise2Self training works (concept)
 
 Because the self-supervised loss is much easier to implement than the data loading, GPU management, logging, and architecture design required for handling any particular dataset, we recommend that you take any existing pipeline for your data and simply modify the training loop.
 
@@ -40,10 +44,44 @@ for i, batch in enumerate(data_loader):
     loss = loss_function(output*mask, noisy_images*mask)
 ```
 
-Dependencies are in the `environment.yml` file.
+## HDF5 stacks (.h5)
 
-The remaining notebooks generate figures from the [paper](https://arxiv.org/abs/1901.11365).
+If your stack is in an HDF5 file you can train directly.
 
+### Expected dataset format
+
+- Dataset key: `/data` (preferred) or `/X` (fallback)
+- Dataset shape:
+  - `(N, H, W)` or
+  - `(N0, N1, H, W)` (treated as a flattened stack of `N=N0*N1`)
+
+### Train
+
+Patch-based (recommended):
+
+```
+python train_noise2self.py --h5 path\to\your.h5 --max-samples 1000 --device cuda --model unet --patch 128 --batch 16 --epochs 10 --amp
+```
+
+Recommended: enable validation + save best + early stopping:
+
+```
+python train_noise2self.py --h5 path\to\your.h5 --max-samples 1000 --device cuda --model unet --patch 128 --batch 16 --epochs 200 --amp --val-frac 0.1 --save-best --early-stop-patience 10 --early-stop-min-delta 1e-5
+```
+
+Full-frame (no patch sampling):
+
+```
+python train_noise2self.py --h5 path\to\your.h5 --max-samples 1000 --device cuda --model unet --patch 0 --batch 2 --epochs 10 --amp
+```
+
+### Denoise (inference) an HDF5 stack
+
+If you trained with `--normalize none --no-scale-integers`, you can require reconstructable “counts-space” output:
+
+```
+python scripts/denoise_h5_stack.py --h5 path\to\your.h5 --ckpt runs/noise2self/ckpt_best.pt --out path\to\denoised.h5 --device cuda --batch 32 --amp --require-reconstructable
+```
 
 
 
