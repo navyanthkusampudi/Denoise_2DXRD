@@ -27,9 +27,7 @@ Prior to machine learning, the following preprocessing steps were applied:
 the detector images were cropped to the left 512 × 512 pixel region, 
 invalid detector pixels marked by the sentinel value (2³² − 1) were replaced with zero, 
 and a variance-stabilizing transform was applied to the intensities,
-$$
-I \rightarrow \sqrt{\max(I, 0) + 0.375}.
-$$
+$$ I \rightarrow \sqrt{\max(I, 0) + 0.375} $$
 
 
 The preprocessed data are reshaped into individual images with an added channel dimension for training. 
